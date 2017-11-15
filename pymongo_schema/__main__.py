@@ -38,6 +38,10 @@ def add_subparser_extract(subparsers, parent_parsers):
                            help='Port to connect to MongoDB [default: 27017]')
     subparser.add_argument('--host', default='localhost',
                            help='Server to connect to MongoDB [default: localhost]')
+    subparser.add_argument('--user', default=None,
+                           help='user to connect to MongoDB [default: None]')
+    subparser.add_argument('--password', default=None,
+                           help='password to connect to MongoDB [default: None]')
     subparser.add_argument('-q', '--query', default={},
                            help='Only analyze data find by query')
 
@@ -173,7 +177,16 @@ def extract_schema(args):
     """ Main entry point function to extract schema."""
     start_time = time()
     logger.info('=== Start MongoDB schema analysis')
-    client = pymongo.MongoClient(host=args.host, port=args.port)
+    mongouri = 'mongodb://{}:{}/'.format(args.host, int(args.port))
+    if args.user:
+        mongouri = 'mongodb://{}:{}@{}:{}/{}'.format(
+            args.user,
+            args.password,
+            args.host,
+            int(args.port),
+            'admin'
+        )
+    client = pymongo.MongoClient(mongouri)
 
     mongo_schema = extract_pymongo_client_schema(client,
                                                  database_names=args.databases,
