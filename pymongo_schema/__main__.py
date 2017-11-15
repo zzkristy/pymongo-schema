@@ -38,6 +38,8 @@ def add_subparser_extract(subparsers, parent_parsers):
                            help='Port to connect to MongoDB [default: 27017]')
     subparser.add_argument('--host', default='localhost',
                            help='Server to connect to MongoDB [default: localhost]')
+    subparser.add_argument('-q', '--query', default={},
+                           help='Only analyze data find by query')
 
 
 def add_subparser_transform(subparsers, parent_parsers):
@@ -175,7 +177,8 @@ def extract_schema(args):
 
     mongo_schema = extract_pymongo_client_schema(client,
                                                  database_names=args.databases,
-                                                 collection_names=args.collections)
+                                                 collection_names=args.collections,
+                                                 filters=args.query)
 
     logger.info('--- MongoDB schema analysis took %.2f s', time() - start_time)
     return mongo_schema

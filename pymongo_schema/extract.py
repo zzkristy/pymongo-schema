@@ -39,7 +39,7 @@ Objects are initialized as defaultdict(empty_field_schema) to simplify the code
         'object': {}, # (optional if object) object_schema
     }
 """
-
+import json
 import logging
 from collections import defaultdict
 
@@ -50,7 +50,7 @@ from pymongo_schema.mongo_sql_types import get_type_string, common_parent_type
 logger = logging.getLogger(__name__)
 
 
-def extract_pymongo_client_schema(pymongo_client, database_names=None, collection_names=None):
+def extract_pymongo_client_schema(pymongo_client, database_names=None, collection_names=None, filters=None):
     """ Extract the schema for every database in database_names
 
     :param pymongo_client: pymongo.mongo_client.MongoClient
@@ -72,14 +72,14 @@ def extract_pymongo_client_schema(pymongo_client, database_names=None, collectio
     for database in database_names:
         logger.info('Extract schema of database %s', database)
         pymongo_database = pymongo_client[database]
-        database_schema = extract_database_schema(pymongo_database, collection_names)
+        database_schema = extract_database_schema(pymongo_database, collection_names, filters)
         if database_schema:  # Do not add a schema if it is empty
             mongo_schema[database] = database_schema
 
     return mongo_schema
 
 
-def extract_database_schema(pymongo_database, collection_names=None):
+def extract_database_schema(pymongo_database, collection_names=None, filters=None):
     """ Extract the database schema, for every collection in collection_names
 
     :param pymongo_database: pymongo.database.Database
@@ -99,12 +99,12 @@ def extract_database_schema(pymongo_database, collection_names=None):
     for collection in collection_names:
         logger.info('...collection %s', collection)
         pymongo_collection = pymongo_database[collection]
-        database_schema[collection] = extract_collection_schema(pymongo_collection)
+        database_schema[collection] = extract_collection_schema(pymongo_collection, filters)
 
     return database_schema
 
 
-def extract_collection_schema(pymongo_collection):
+def extract_collection_schema(pymongo_collection, filters=None):
     """ Iterate through all document of a collection to create its schema
 
     - Init collection schema
@@ -121,7 +121,8 @@ def extract_collection_schema(pymongo_collection):
 
     n = pymongo_collection.count()
     i = 0
-    for document in pymongo_collection.find({}):
+    query_filters = json.loads(filters) if filters else {}
+    for document in pymongo_collection.find(query_filters):
         collection_schema['count'] += 1
         add_document_to_object_schema(document, collection_schema['object'])
         i += 1
