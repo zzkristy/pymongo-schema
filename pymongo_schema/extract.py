@@ -39,13 +39,13 @@ Objects are initialized as defaultdict(empty_field_schema) to simplify the code
         'object': {}, # (optional if object) object_schema
     }
 """
-import json
 import logging
 from collections import defaultdict
 
 from past.builtins import basestring
 
 from pymongo_schema.mongo_sql_types import get_type_string, common_parent_type
+from bson.json_util import loads
 
 logger = logging.getLogger(__name__)
 
@@ -119,9 +119,9 @@ def extract_collection_schema(pymongo_collection, filters=None):
         "object": init_empty_object_schema()
     }
 
-    n = pymongo_collection.count()
     i = 0
-    query_filters = json.loads(filters) if filters else {}
+    query_filters = loads(filters) if filters else {}
+    n = pymongo_collection.find(query_filters).count()
     for document in pymongo_collection.find(query_filters):
         collection_schema['count'] += 1
         add_document_to_object_schema(document, collection_schema['object'])
